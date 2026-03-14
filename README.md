@@ -1,218 +1,245 @@
 # Sales Forecasting Time Series ML System
 
-## Project Overview
+A machine learning project that predicts weekly retail sales from past sales patterns.
 
-This project builds a machine learning system to forecast weekly retail sales using historical time-series data.
+This project is part of my Data Science / Machine Learning portfolio. It shows a full workflow from data analysis to model saving and API deployment.
 
-The goal is to predict future sales based on previous sales patterns.
-The project demonstrates a complete data science workflow including:
+## Project Goal
 
-* Exploratory Data Analysis (EDA)
+The goal of this project is to forecast weekly sales using historical Walmart sales data.
+
+This project covers:
+
+* Data loading and cleaning
+* Exploratory data analysis
 * Time series feature engineering
-* Machine learning model training
+* Model training
 * Model evaluation
-* Model deployment with FastAPI
-
-This project is part of a Data Science portfolio.
-
----
+* Model saving with joblib
+* FastAPI prediction endpoint
 
 ## Dataset
 
-Dataset: Walmart Store Sales Forecasting
+Dataset used: Walmart Store Sales Forecasting
 
-The dataset contains weekly sales data for multiple Walmart stores.
+File used in this project:
 
-Features include:
+`data/raw/Walmart.csv`
 
-* Store
-* Date
-* Weekly_Sales
-* Holiday_Flag
-* Temperature
-* Fuel_Price
-* CPI
-* Unemployment
+Main columns:
+
+* `Store`
+* `Date`
+* `Weekly_Sales`
+* `Holiday_Flag`
+* `Temperature`
+* `Fuel_Price`
+* `CPI`
+* `Unemployment`
 
 Target variable:
 
-Weekly_Sales
+* `Weekly_Sales`
 
-Dataset file:
+## Problem Type
 
-data/raw/Walmart.csv
+This is a **time series forecasting** problem.
 
----
+The model uses past weekly sales values to predict future weekly sales.
+
+## Project Structure
+
+```
+sales-forecasting-timeseries-ml-khatantamir/
+│
+├── app/
+│   └── main.py
+│
+├── data/
+│   └── raw/
+│       └── Walmart.csv
+│
+├── models/
+│   └── sales_forecast_model.pkl
+│
+├── notebooks/
+│   └── eda.ipynb
+│
+├── src/
+│   ├── train.py
+│   └── predict.py
+│
+├── requirements.txt
+└── README.md
+```
 
 ## Exploratory Data Analysis
 
-EDA was performed in the notebook:
+EDA was done in:
 
-notebooks/eda.ipynb
+`notebooks/eda.ipynb`
 
-Key steps:
+Main steps:
 
-* Load dataset
-* Convert Date column to datetime
-* Visualize weekly sales trends
-* Explore time series patterns
-
-Example time series plot:
-
-Weekly sales were plotted over time to observe patterns and fluctuations.
-
----
+* Loaded the dataset with pandas
+* Checked the first rows
+* Checked dataset shape
+* Reviewed column names
+* Converted `Date` to datetime format
+* Plotted weekly sales over time
+* Focused on one store for cleaner forecasting
 
 ## Feature Engineering
 
-Time series forecasting requires lag features.
+To make the data usable for forecasting, lag features were created.
 
-Lag features were created from historical sales:
+Lag features used:
 
-lag_1 = previous week sales
-lag_2 = sales two weeks ago
-lag_3 = sales three weeks ago
+* `lag_1` = sales from 1 week earlier
+* `lag_2` = sales from 2 weeks earlier
+* `lag_3` = sales from 3 weeks earlier
 
-These features allow the model to learn temporal dependencies.
-
-Example:
-
-Sales(t) → predicted using
-
-Sales(t-1), Sales(t-2), Sales(t-3)
-
----
+These features help the model learn how past sales affect future sales.
 
 ## Model Training
 
+The model was trained in:
+
+`src/train.py`
+
 Model used:
 
-RandomForestRegressor
+`RandomForestRegressor`
 
-Training script:
+Training process:
 
-src/train.py
-
-Training steps:
-
-1. Load dataset
-2. Filter Store 1
-3. Create lag features
-4. Split into training and test sets
-5. Train Random Forest model
-6. Save trained model
-
-Saved model:
-
-models/sales_forecast_model.pkl
-
----
+1. Load the dataset
+2. Convert the date column
+3. Filter data for Store 1
+4. Sort by date
+5. Create lag features
+6. Drop missing rows caused by shifting
+7. Split data into train and test sets
+8. Train the model
+9. Save the trained model
 
 ## Model Evaluation
 
-The model was evaluated using:
+The model was evaluated with:
 
-MAE — Mean Absolute Error
-RMSE — Root Mean Squared Error
+* **MAE** — Mean Absolute Error
+* **RMSE** — Root Mean Squared Error
 
-These metrics measure prediction accuracy for the test dataset.
+These metrics show how close predictions are to actual sales values.
 
----
+A comparison plot of actual vs predicted sales was also created in the notebook.
+
+## Saved Model
+
+The trained model is saved here:
+
+`models/sales_forecast_model.pkl`
+
+Library used:
+
+`joblib`
 
 ## Prediction Script
 
 Prediction script:
 
-src/predict.py
+`src/predict.py`
 
-Example input:
+This script loads the saved model and predicts sales from example lag inputs.
 
-lag_1 = 1500000
-lag_2 = 1480000
-lag_3 = 1510000
+Example inputs:
 
-Example output:
+* previous week sales
+* two weeks ago sales
+* three weeks ago sales
 
-Predicted Sales: 1,520,000
-
----
+The model then returns the predicted weekly sales.
 
 ## API Deployment
 
-The model is deployed using FastAPI.
+FastAPI app file:
 
-API file:
+`app/main.py`
 
-app/main.py
+The API includes:
 
-Start the API server:
+* `GET /` → health check
+* `POST /predict` → predict weekly sales
 
+### Run the API
+
+```bash
 uvicorn app.main:app --reload
+```
 
-API documentation will be available at:
+### Open API documentation
 
+```
 http://127.0.0.1:8000/docs
+```
 
-Example API request:
+## Example Prediction Input
 
-POST /predict
+The prediction endpoint uses three lag values:
 
-Input:
+* `lag_1`
+* `lag_2`
+* `lag_3`
 
-{
-"lag_1": 1500000,
-"lag_2": 1480000,
-"lag_3": 1510000
-}
+Example:
 
-Output:
+```
+lag_1 = 1500000
+lag_2 = 1480000
+lag_3 = 1510000
+```
 
-{
-"predicted_sales": 1520000
-}
+Example output:
 
----
-
-## Project Structure
-
-sales-forecasting-timeseries-ml-khatantamir
-
-data
- raw
-  Walmart.csv
-
-models
- sales_forecast_model.pkl
-
-notebooks
- eda.ipynb
-
-src
- train.py
- predict.py
-
-app
- main.py
-
-requirements.txt
-README.md
-
----
+```
+predicted_sales = 1520000
+```
 
 ## Technologies Used
 
-Python
-Pandas
-Scikit-learn
-Matplotlib
-Joblib
-FastAPI
-Uvicorn
+* Python
+* pandas
+* scikit-learn
+* matplotlib
+* joblib
+* FastAPI
+* uvicorn
 
----
+## Why This Project Matters
+
+Sales forecasting helps businesses with:
+
+* inventory planning
+* staffing decisions
+* budgeting
+* demand planning
+* business strategy
+
+This project demonstrates how machine learning can support business decision-making.
+
+## Portfolio Value
+
+This project demonstrates the ability to:
+
+* work with time series data
+* engineer forecasting features
+* train machine learning models
+* evaluate prediction performance
+* save models for reuse
+* deploy a simple prediction API
 
 ## Author
 
-Khatantamir Otgonbyamba
+**Khatantamir Otgonbyamba**
 
 Data Science / Machine Learning Portfolio Project
