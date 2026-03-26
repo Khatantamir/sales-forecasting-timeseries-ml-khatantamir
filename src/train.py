@@ -1,40 +1,97 @@
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
-import joblib
+import numpy as np
+import matplotlib.pyplot as plt
 
-# load data
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.model_selection import train_test_split
+
+import joblib
+import os
+
+# =========================
+# 1. Load data
+# =========================
 df = pd.read_csv("data/raw/Walmart.csv")
 
-# convert date
-df["Date"] = pd.to_datetime(df["Date"], dayfirst=True)
+# =========================
+# 2. Data preprocessing
+# =========================
+df['Date'] = pd.to_datetime(df['Date'])
 
-# select store
-store1 = df[df["Store"] == 1]
+# зөвхөн Store 1 ашиглая (simple болгох)
+df = df[df['Store'] == 1]
 
-store1 = store1.sort_values("Date")
+df = df.sort_values("Date")
 
-# lag features
-store1["lag_1"] = store1["Weekly_Sales"].shift(1)
-store1["lag_2"] = store1["Weekly_Sales"].shift(2)
-store1["lag_3"] = store1["Weekly_Sales"].shift(3)
+# =========================
+# 3. Feature Engineering (lag features)
+# =========================
+df['lag_1'] = df['Weekly_Sales'].shift(1)
+df['lag_2'] = df['Weekly_Sales'].shift(2)
+df['lag_3'] = df['Weekly_Sales'].shift(3)
 
-store1.dropna(inplace=True)
+# missing row устгах
+df = df.dropna()
 
-# train test split
-train = store1[:-20]
-test = store1[-20:]
+# =========================
+# 4. Define X, y
+# =========================
+X = df[['lag_1', 'lag_2', 'lag_3']]
+y = df['Weekly_Sales']
 
-features = ["lag_1","lag_2","lag_3"]
+# =========================
+# 5. Train-test split
+# =========================
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, shuffle=False
+)
 
-X_train = train[features]
-y_train = train["Weekly_Sales"]
-
-# model
-model = RandomForestRegressor()
-
+# =========================
+# 6. Train model
+# =========================
+model = RandomForestRegressor(n_estimators=100, random_state=42)
 model.fit(X_train, y_train)
 
-# save model
+# =========================
+# 7. Predict
+# =========================
+y_pred = model.predict(X_test)
+
+# =========================
+# 8. Evaluation
+# =========================
+mae = mean_absolute_error(y_test, y_pred)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+print("MAE:", mae)
+print("RMSE:", rmse)
+
+# =========================
+# 9. SAVE GRAPH (🔥 ЧУХАЛ)
+# =========================
+plt.figure(figsize=(12,6))
+
+plt.plot(y_test.values, label="Actual Sales", linewidth=2)
+plt.plot(y_pred, label="Predicted Sales", linestyle="--")
+
+plt.title("Actual vs Predicted Weekly Sales")
+plt.xlabel("Time (Weeks)")
+plt.ylabel("Sales")
+
+plt.legend()
+plt.grid()
+
+# зураг хадгалах
+plt.savefig("forecast_plot.png")
+plt.close()
+
+print("Graph saved as forecast_plot.png")
+
+# =========================
+# 10. Save model
+# =========================
+os.makedirs("models", exist_ok=True)
 joblib.dump(model, "models/sales_forecast_model.pkl")
 
-print("Model trained and saved.")
+print("Model saved successfully")
